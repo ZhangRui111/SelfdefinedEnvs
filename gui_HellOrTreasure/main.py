@@ -15,6 +15,10 @@ def my_update():
                 env.render(0.5)
                 break
 
+    # end of game
+    print('game over')
+    env.destroy()
+
 
 def main():
     global env

@@ -11,7 +11,7 @@ class Maze(tk.Tk, object):
         map = self.read_map(path_to_map)
         self.height = map['height']
         self.width = map['width']
-        self.obstacles_origin = map['obstacles']  # all obstacles' position.
+        self.hells_origin = map['hells']  # all hells' position.
         self.exit_origin = map['exit']  # exit's position.
         self.player_origin = map['player']  # player's position.
 
@@ -42,16 +42,16 @@ class Maze(tk.Tk, object):
         # coordination of the origin point (center of the top left corner unit).
         self.origin = np.array([self.unit/2, self.unit/2])
 
-        # create obstacle (gray rectangle).
-        self.obstacles_coords = []  # hold all obstacles' coordination.
-        for i in range(len(self.obstacles_origin)):
-            obstacle_center = self.origin + np.array(
-                [self.unit * self.obstacles_origin[i][0], self.unit * self.obstacles_origin[i][1]])
-            obstacle = self.canvas.create_rectangle(
-                obstacle_center[0] - 15, obstacle_center[1] - 15,
-                obstacle_center[0] + 15, obstacle_center[1] + 15,
-                fill='gray')
-            self.obstacles_coords.append(self.canvas.coords(obstacle))
+        # create hell (black rectangle).
+        self.hells_coords = []  # hold all hells' coordination.
+        for i in range(len(self.hells_origin)):
+            hell_center = self.origin + np.array(
+                [self.unit * self.hells_origin[i][0], self.unit * self.hells_origin[i][1]])
+            hell = self.canvas.create_rectangle(
+                hell_center[0] - 15, hell_center[1] - 15,
+                hell_center[0] + 15, hell_center[1] + 15,
+                fill='black')
+            self.hells_coords.append(self.canvas.coords(hell))
 
         # create exit (green oval)
         exit_center = self.origin + np.array(
@@ -86,63 +86,42 @@ class Maze(tk.Tk, object):
         return self.canvas.coords(self.player)
 
     def step(self, action):
-        s = self.canvas.coords(self.player)  # player's current coordination.
-        base_action = np.array([0, 0])  # guide the player's real movement.
-        s_est = s.copy()  # estimation of player's next coordination.
-        # # ------- verify s_est == s_real ------- # #
-        # if_cmp = True
-        # # ------- verify s_est == s_real ------- # #
+        s = self.canvas.coords(self.player)
+        base_action = np.array([0, 0])
         if action == 0:  # up
             if s[1] > self.unit:
                 base_action[1] -= self.unit
-                s_est[1] -= 40.
-                s_est[3] -= 40.
         elif action == 1:  # down
             if s[1] < (self.height - 1) * self.unit:
                 base_action[1] += self.unit
-                s_est[1] += 40.
-                s_est[3] += 40.
         elif action == 2:  # left
             if s[0] > self.unit:
                 base_action[0] -= self.unit
-                s_est[0] -= 40.
-                s_est[2] -= 40.
         elif action == 3:  # right
             if s[0] < (self.width - 1) * self.unit:
                 base_action[0] += self.unit
-                s_est[0] += 40.
-                s_est[2] += 40.
         else:
             print('illegal action!')
 
-        # self.canvas.move(self.player, base_action[0], base_action[1])  # move agent
-        # s_real = self.canvas.coords(self.player)  # next state
+        self.canvas.move(self.player, base_action[0], base_action[1])  # move agent
+
+        s_ = self.canvas.coords(self.player)  # next state
 
         # reward function
-        if s_est == self.canvas.coords(self.exit):
+        if s_ == self.canvas.coords(self.exit):
             reward = 1
             done = True
             info = 'terminal'
-        else:
-            if s_est in self.obstacles_coords:
-                base_action = np.array([0, 0])
-                # # ------- verify s_est == s_real ------- # #
-                # if_cmp = False
-                # # ------- verify s_est == s_real ------- # #
+        elif s_ in self.hells_coords:
             reward = -1
+            done = True
+            info = 'terminal'
+        else:
+            reward = 0
             done = False
             info = 'running'
 
-        self.canvas.move(self.player, base_action[0], base_action[1])  # move agent
-        s_real = self.canvas.coords(self.player)  # player's real next coordination.
-        # # ------- verify s_est == s_real ------- # #
-        # if if_cmp:
-        #     s_est = [int(x) for x in s_est]
-        #     s_real = [int(x) for x in s_real]
-        #     assert s_est == s_real
-        # # ------- verify s_est == s_real ------- # #
-
-        return s_real, reward, done, info
+        return s_, reward, done, info
 
     def render(self, slt=None):
         if slt is not None:
@@ -156,6 +135,7 @@ class Maze(tk.Tk, object):
 #         while True:
 #             env.render(0.5)
 #             a = np.random.random_integers(4)-1
+#             print(a)
 #             s, r, done, info = env.step(a)
 #             if done:
 #                 print(info)

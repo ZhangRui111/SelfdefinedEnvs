@@ -1,11 +1,12 @@
 # Byte-compiled / optimized / DLL files
-*/__pycache__/
+**/__pycache__/*
 
 # My configurations:
-*/data/
-*/.idea/
-*/logs/
+**/data/*
+**/.idea/*
+**/logs/*
 *.iml
 *.txt
+*.xml
 events*
 test.py

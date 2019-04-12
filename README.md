@@ -1,1 +1,3 @@
-# selfdefined_env
+# SelfdefinedEnvs
+
+Some selfdefined environments for RL algorithms.

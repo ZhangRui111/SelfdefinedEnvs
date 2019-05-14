@@ -5,10 +5,10 @@ import tkinter as tk
 
 
 class Maze(tk.Tk, object):
-    def __init__(self, path_to_map):
+    def __init__(self, path_to_map, full_observation=True):
         super(Maze, self).__init__()
 
-        map = self.read_map(path_to_map)
+        map = self._read_map(path_to_map)
         self.height = map['height']
         self.width = map['width']
         self.obstacles_origin = map['obstacles']  # all obstacles' position.
@@ -20,10 +20,12 @@ class Maze(tk.Tk, object):
         self.n_actions = len(self.action_space)
 
         self.title('Gui Maze')
+        self.full = full_observation
         self.geometry('{0}x{1}'.format(self.height * self.unit, self.height * self.unit))  # windows background.
         self._build_maze()
+        self.observation = self._build_observation()
 
-    def read_map(self, path_to_map):
+    def _read_map(self, path_to_map):
         with open(path_to_map) as json_file:
             data = json.load(json_file)
             return data
@@ -72,6 +74,19 @@ class Maze(tk.Tk, object):
         # pack all
         self.canvas.pack()
 
+    def _build_observation(self):
+        """ Build full observed observation. """
+        #  2 -- exit
+        # -1 -- obstacle
+        #  1 -- player
+        #  0 -- path
+        obser = np.zeros((self.width, self.height))
+        obser[self.exit_origin[0][0], self.exit_origin[0][1]] = 2
+        for item in self.obstacles_origin:
+            obser[item[0], item[1]] = -1
+
+        return obser
+
     def reset(self):
         self.update()
         self.canvas.delete(self.player)
@@ -83,7 +98,12 @@ class Maze(tk.Tk, object):
             player_center[0] + 15, player_center[1] + 15,
             fill='yellow')
         # return observation
-        return self.canvas.coords(self.player)
+        if self.full:
+            obser = self.observation.copy()
+            obser[self.player_origin[0][0], self.player_origin[0][1]] = 1
+            return obser.T
+        else:
+            return self.canvas.coords(self.player)
 
     def step(self, action):
         s = self.canvas.coords(self.player)  # player's current coordination.
@@ -141,8 +161,13 @@ class Maze(tk.Tk, object):
         #     s_real = [int(x) for x in s_real]
         #     assert s_est == s_real
         # # ------- verify s_est == s_real ------- # #
-
-        return s_real, reward, done, info
+        if self.full:
+            player_real = [int(s_real[0] // self.unit), int(s_real[1] // self.unit)]
+            obser = self.observation.copy()
+            obser[player_real[0], player_real[1]] = 1
+            return obser.T, reward, done, info
+        else:
+            return s_real, reward, done, info
 
     def render(self, slt=None):
         if slt is not None:

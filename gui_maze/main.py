@@ -2,7 +2,7 @@ import numpy as np
 from gui_maze.maze import Maze
 
 
-def my_update():
+def my_update(env):
     for t in range(10):
         s = env.reset([[1, 1]])
         print(s)
@@ -25,10 +25,12 @@ def my_update():
 
 
 def main():
-    global env
+    # global env
+    # env = Maze('./maps/map2.json', full_observation=True)
+    # env.after(100, my_update)  # Call function update() once after given time/ms.
+    # env.mainloop()  # mainloop() to run the application.
     env = Maze('./maps/map2.json', full_observation=True)
-    env.after(100, my_update)  # Call function update() once after given time/ms.
-    env.mainloop()  # mainloop() to run the application.
+    my_update(env)
 
 
 if __name__ == '__main__':
